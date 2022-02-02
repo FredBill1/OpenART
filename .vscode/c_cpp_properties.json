@@ -490,9 +490,12 @@
                 "__clang_minor__=0",
                 "__clang_patchlevel__=0",
                 "__clang_version__=\"13.0.0 (ssh://ds-gerrit/armcompiler/llvm-project 1f5770d6f72ee4eba2159092bbf4cbb819be323a)\"",
-                "__llvm__=1"
+                "__llvm__=1",
+                "NDEBUG"
             ],
-            "intelliSenseMode": "${default}"
+            "intelliSenseMode": "gcc-arm",
+            "compilerPath": "C:\\RT-ThreadStudio\\repo\\Extract\\ToolChain_Support_Packages\\ARM\\GNU_Tools_for_ARM_Embedded_Processors\\5.4.1\\bin\\arm-none-eabi-gcc.exe",
+            "cStandard": "gnu99"
         }
     ],
     "version": 4
