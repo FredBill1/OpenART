@@ -12355,6 +12355,9 @@ void imlib_rotation_corr(image_t *img, float x_rotation, float y_rotation, float
     float z = (fast_sqrtf((w * w) + (h * h)) / 2) / tanf(fov / 2);
     float z_z = z * zoom;
 
+    const int ww = 120;
+    const int hh = 120;
+
     matd_t *A1 = matd_create(4, 3);
     MATD_EL(A1, 0, 0) = 1;  MATD_EL(A1, 0, 1) = 0;  MATD_EL(A1, 0, 2) = -w / 2;
     MATD_EL(A1, 1, 0) = 0;  MATD_EL(A1, 1, 1) = 1;  MATD_EL(A1, 1, 2) = -h / 2;
@@ -12407,20 +12410,24 @@ void imlib_rotation_corr(image_t *img, float x_rotation, float y_rotation, float
         corr[3] = corners[1];
         zarray_add(correspondences, &corr);
 
-        corr[0] = w - 1;
+        // corr[0] = w - 1;
+        corr[0] = ww - 1;
         corr[1] = 0;
         corr[2] = corners[2];
         corr[3] = corners[3];
         zarray_add(correspondences, &corr);
 
-        corr[0] = w - 1;
-        corr[1] = h - 1;
+        // corr[0] = w - 1;
+        // corr[1] = h - 1;
+        corr[0] = ww - 1;
+        corr[1] = hh - 1;
         corr[2] = corners[4];
         corr[3] = corners[5];
         zarray_add(correspondences, &corr);
 
         corr[0] = 0;
-        corr[1] = h - 1;
+        // corr[1] = h - 1;
+        corr[1] = hh - 1;
         corr[2] = corners[6];
         corr[3] = corners[7];
         zarray_add(correspondences, &corr);
