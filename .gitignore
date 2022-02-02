@@ -41,3 +41,4 @@ ncscope.*
 tags
 
 *.uvguix.*
+!/.vscode
