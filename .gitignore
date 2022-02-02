@@ -40,3 +40,4 @@ ncscope.*
 #ctag files
 tags
 
+*.uvguix.*

@@ -16,8 +16,8 @@
         <TargetCommonOption>
           <Device>MIMXRT1064DVL6A</Device>
           <Vendor>NXP</Vendor>
-          <PackID>NXP.MIMXRT1064_DFP.12.0.0</PackID>
-          <PackURL>http://mcuxpresso.nxp.com/cmsis_pack/repo/</PackURL>
+          <PackID>NXP.MIMXRT1064_DFP.13.1.1</PackID>
+          <PackURL>https://mcuxpresso.nxp.com/cmsis_pack/repo/</PackURL>
           <Cpu>IRAM(0x20000000,0x020000) IRAM2(0x00000000,0x020000) IROM(0x70000000,0x400000) IROM2(0x00200000,0x020000) XRAM(0x20200000,0x0c0000) CPUTYPE("Cortex-M7") FPU3(DFPU) CLOCK(12000000) ELITTLE</Cpu>
           <FlashUtilSpec></FlashUtilSpec>
           <StartupFile></StartupFile>
@@ -2756,14 +2756,14 @@
               <FilePath>..\components\openmv-nxp\nncu\nncie_m4_m7_m33_sp_cmsisnn.lib</FilePath>
             </File>
             <File>
-              <FileName>libtf.lib</FileName>
-              <FileType>4</FileType>
-              <FilePath>..\components\openmv-nxp\libtf\cortex-m7\libtf.lib</FilePath>
-            </File>
-            <File>
               <FileName>libtf_person_detect_model_data.lib</FileName>
               <FileType>4</FileType>
               <FilePath>..\components\openmv-nxp\libtf\cortex-m7\libtf_person_detect_model_data.lib</FilePath>
+            </File>
+            <File>
+              <FileName>libtf_V5.36.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\components\openmv-nxp\libtf\cortex-m7\libtf_V5.36.lib</FilePath>
             </File>
           </Files>
         </Group>
@@ -2983,8 +2983,8 @@
         <TargetCommonOption>
           <Device>MIMXRT1064DVL6A</Device>
           <Vendor>NXP</Vendor>
-          <PackID>NXP.MIMXRT1064_DFP.12.0.0</PackID>
-          <PackURL>http://mcuxpresso.nxp.com/cmsis_pack/repo/</PackURL>
+          <PackID>NXP.MIMXRT1064_DFP.13.1.1</PackID>
+          <PackURL>https://mcuxpresso.nxp.com/cmsis_pack/repo/</PackURL>
           <Cpu>IRAM(0x20000000,0x020000) IRAM2(0x00000000,0x020000) IROM(0x70000000,0x400000) IROM2(0x00200000,0x020000) XRAM(0x20200000,0x0c0000) CPUTYPE("Cortex-M7") FPU3(DFPU) CLOCK(12000000) ELITTLE</Cpu>
           <FlashUtilSpec></FlashUtilSpec>
           <StartupFile></StartupFile>
@@ -5516,14 +5516,14 @@
               <FilePath>..\components\openmv-nxp\nncu\nncie_m4_m7_m33_sp_cmsisnn.lib</FilePath>
             </File>
             <File>
-              <FileName>libtf.lib</FileName>
-              <FileType>4</FileType>
-              <FilePath>..\components\openmv-nxp\libtf\cortex-m7\libtf.lib</FilePath>
-            </File>
-            <File>
               <FileName>libtf_person_detect_model_data.lib</FileName>
               <FileType>4</FileType>
               <FilePath>..\components\openmv-nxp\libtf\cortex-m7\libtf_person_detect_model_data.lib</FilePath>
+            </File>
+            <File>
+              <FileName>libtf_V5.36.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\components\openmv-nxp\libtf\cortex-m7\libtf_V5.36.lib</FilePath>
             </File>
           </Files>
         </Group>
