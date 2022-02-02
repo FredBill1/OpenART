@@ -204,7 +204,7 @@ void BOARD_InitFlexspiPins(){
 }
 #endif
 
-void BOARD_Config_FLASH_Excute_MPU(uint8_t dis_excute) __attribute__((section(".ram_code")));
+// void BOARD_Config_FLASH_Excute_MPU(uint8_t dis_excute) __attribute__((section(".ram_code")));
 void BOARD_Config_FLASH_Excute_MPU(uint8_t dis_excute)
 {
 	MPU->RBAR = ARM_MPU_RBAR(3, 0x70000000U);
