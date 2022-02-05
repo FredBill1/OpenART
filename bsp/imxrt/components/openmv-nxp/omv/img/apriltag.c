@@ -12408,8 +12408,8 @@ void imlib_rotation_corr(image_t *img, float x_rotation, float y_rotation, float
     const int w = img->w;
     const int h = img->h;
 
-    const int ww = 160;
-    const int hh = 160;
+    const int ww = fast_roundf(x_translation);
+    const int hh = fast_roundf(y_translation);
 
     float m[3][3];
     {
