@@ -12337,11 +12337,108 @@ void imlib_find_rects(list_t *out, image_t *ptr, rectangle_t *roi, uint32_t thre
 #endif //IMLIB_ENABLE_FIND_RECTS
 
 #ifdef IMLIB_ENABLE_ROTATION_CORR
+
+void homography_compute2(float dst[3][3], float c[4][4]) {
+    float A[] = {
+        c[0][0], c[0][1], 1,       0,       0, 0, -c[0][0]*c[0][2], -c[0][1]*c[0][2], c[0][2],
+              0,       0, 0, c[0][0], c[0][1], 1, -c[0][0]*c[0][3], -c[0][1]*c[0][3], c[0][3],
+        c[1][0], c[1][1], 1,       0,       0, 0, -c[1][0]*c[1][2], -c[1][1]*c[1][2], c[1][2],
+              0,       0, 0, c[1][0], c[1][1], 1, -c[1][0]*c[1][3], -c[1][1]*c[1][3], c[1][3],
+        c[2][0], c[2][1], 1,       0,       0, 0, -c[2][0]*c[2][2], -c[2][1]*c[2][2], c[2][2],
+              0,       0, 0, c[2][0], c[2][1], 1, -c[2][0]*c[2][3], -c[2][1]*c[2][3], c[2][3],
+        c[3][0], c[3][1], 1,       0,       0, 0, -c[3][0]*c[3][2], -c[3][1]*c[3][2], c[3][2],
+              0,       0, 0, c[3][0], c[3][1], 1, -c[3][0]*c[3][3], -c[3][1]*c[3][3], c[3][3],
+    };
+
+    // Eliminate.
+    for (int col = 0; col < 8; col++) {
+        // Find best row to swap with.
+        float max_val = 0;
+        int max_val_idx = -1;
+        for (int row = col; row < 8; row++) {
+            float val = fabs(A[row * 9 + col]);
+            if (val > max_val) {
+                max_val = val;
+                max_val_idx = row;
+            }
+        }
+
+        // Swap to get best row.
+        if (max_val_idx != col) {
+            for (int i = col; i < 9; i++) {
+                float tmp = A[col * 9 + i];
+                A[col * 9 + i] = A[max_val_idx * 9 + i];
+                A[max_val_idx * 9 + i] = tmp;
+            }
+        }
+
+        // Do eliminate.
+        for (int i = col + 1; i < 8; i++) {
+            float f = A[i * 9 + col] / A[col * 9 + col];
+            A[i * 9 + col] = 0;
+            for (int j = col + 1; j < 9; j++) A[i * 9 + j] -= f * A[col * 9 + j];
+        }
+    }
+
+    // Back solve.
+    for (int col = 7; col >= 0; col--) {
+        float sum = 0;
+        for (int i = col + 1; i < 8; i++) { sum += A[col * 9 + i] * A[i * 9 + 8]; }
+        A[col * 9 + 8] = (A[col * 9 + 8] - sum) / A[col * 9 + col];
+    }
+    dst[0][0] = A[8 ], dst[0][1] = A[17], dst[0][2] = A[26];
+    dst[1][0] = A[35], dst[1][1] = A[44], dst[1][2] = A[53];
+    dst[2][0] = A[62], dst[2][1] = A[71], dst[2][2] = 1;
+}
+
+void homography_project2(const float H[3][3], float x, float y, float *ox, float *oy) {
+    float xx = H[0][0] * x + H[0][1] * y + H[0][2];
+    float yy = H[1][0] * x + H[1][1] * y + H[1][2];
+    float zz = H[2][0] * x + H[2][1] * y + H[2][2];
+    *ox = xx / zz;
+    *oy = yy / zz;
+}
+
 // http://jepsonsblog.blogspot.com/2012/11/rotation-in-3d-using-opencvs.html
 void imlib_rotation_corr(image_t *img, float x_rotation, float y_rotation, float z_rotation,
                          float x_translation, float y_translation,
                          float zoom, float fov, float *corners)
 {
+    if (img->bpp != IMAGE_BPP_RGB565) return;
+    const int w = img->w;
+    const int h = img->h;
+
+    const int ww = 160;
+    const int hh = 160;
+
+    float m[3][3];
+    {
+        float c[4][4] = {
+            {ww - 1, hh - 1, corners[0], corners[1]},
+            {ww - 1, 0,      corners[2], corners[3]},
+            {0,      0,      corners[4], corners[5]},
+            {0,      hh - 1, corners[6], corners[7]},
+        };
+        homography_compute2(m, c);
+    }
+
+    uint16_t *data = (uint16_t *)img->data;
+    uint16_t *tmp = fb_alloc(ww * hh * sizeof(uint16_t), FB_ALLOC_NO_HINT);
+
+    for (int y = 0; y < hh; ++y) {
+        uint16_t *row_ptr = tmp + ww * y;
+        for (int x = 0; x < ww; ++x) {
+            float x0_, y0_;
+            homography_project2(m, x, y, &x0_, &y0_);
+            int x0 = fast_roundf(x0_), y0 = fast_roundf(y0_);
+            if (0<= x0 && x0 < w && 0 <= y0 && y0 < h) row_ptr[x] = data[y0 * w + x0];
+        }
+    }
+    for (int y = 0; y < hh; ++y) 
+        memcpy(data + y * w, tmp + y * ww, ww * sizeof(uint16_t));
+
+    fb_free(); // tmp;
+#if (0)
     // Create a tmp copy of the image to pull pixels from.
     size_t size = image_size(img);
     void *data = fb_alloc(size, FB_ALLOC_NO_HINT);
@@ -12605,8 +12702,9 @@ void imlib_rotation_corr(image_t *img, float x_rotation, float y_rotation, float
     matd_destroy(A1);
 
     fb_free(); // umm_init_x();
-
+    
     fb_free();
+#endif
 }
 #endif //IMLIB_ENABLE_ROTATION_CORR
 #pragma GCC diagnostic pop
