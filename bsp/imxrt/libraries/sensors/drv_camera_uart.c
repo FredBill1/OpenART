@@ -194,7 +194,7 @@ const int resolution[][2] = {
     {2560, 1600},    /* WQXGA     */
     {2592, 1944},    /* WQXGA2    */
 };
-#define FRAMEBUFFER_SIZE (1280*720*2)
+#define FRAMEBUFFER_SIZE (640*480*2)
 #define FRAMEBUFFER_COUNT 3
 #define FRAGBUF_LOC  __attribute__((section(".dmaFramebuffer")))
 FRAGBUF_LOC static uint64_t s_dmaFragBufs[2][1280 * 4 / 8];	// max supported line length, XRGB8888(*4)
