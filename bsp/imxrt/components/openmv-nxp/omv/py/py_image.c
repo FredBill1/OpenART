@@ -1021,6 +1021,18 @@ static mp_obj_t py_image_to_grayscale(uint n_args, const mp_obj_t *args, mp_map_
                             pixel = COLOR_RGB565_TO_B8(pixel);
                             break;
                         }
+                        case 3: {
+                            pixel = (int)COLOR_RGB565_TO_L(pixel) * 255 / 100;
+                            break;
+                        }
+                        case 4: {
+                            pixel = 128 + (int)COLOR_RGB565_TO_A(pixel);
+                            break;
+                        }
+                        case 5: {
+                            pixel = 128 + (int)COLOR_RGB565_TO_B(pixel);
+                            break;
+                        }
                         default: {
                             pixel = COLOR_RGB565_TO_GRAYSCALE(pixel);
                             break;
