@@ -1066,7 +1066,9 @@ void imx_cam_csi_start_frame(struct imxrt_camera *cam)
 	cam->s_irq.dmaFragNdx = 0;
 	cam->s_irq.cnt++;
 	// DMA also writes to this cache line, to avoid being invalidated, clean MAIN_FB header.
-	DCACHE_CleanByRange((uint32_t)cam->s_irq.base0, 32);
+	// DCACHE_CleanByRange((uint32_t)cam->s_irq.base0, 32);
+    //! fredbill:
+	DCACHE_CleanInvalidateByRange((uint32_t)cam->s_irq.base0, 32);
 	if (cam->s_irq.isGray || cam->sensor.isWindowing) {
 		cam->csi_base->CSIDMASA_FB1 = (uint32_t) s_dmaFragBufs[0];
 		cam->csi_base->CSIDMASA_FB2 = (uint32_t) s_dmaFragBufs[1];
