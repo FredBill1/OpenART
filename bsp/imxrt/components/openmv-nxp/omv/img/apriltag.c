@@ -12338,7 +12338,7 @@ void imlib_find_rects(list_t *out, image_t *ptr, rectangle_t *roi, uint32_t thre
 
 #ifdef IMLIB_ENABLE_ROTATION_CORR
 
-void homography_compute2(float dst[3][3], float c[4][4]) {
+bool homography_compute2(float dst[3][3], float c[4][4]) {
     float A[] = {
         c[0][0], c[0][1], 1,       0,       0, 0, -c[0][0]*c[0][2], -c[0][1]*c[0][2], c[0][2],
               0,       0, 0, c[0][0], c[0][1], 1, -c[0][0]*c[0][3], -c[0][1]*c[0][3], c[0][3],
@@ -12362,6 +12362,9 @@ void homography_compute2(float dst[3][3], float c[4][4]) {
                 max_val_idx = row;
             }
         }
+
+        // Matrix is singular
+        if (max_val < 1e-10) return false;
 
         // Swap to get best row.
         if (max_val_idx != col) {
@@ -12389,6 +12392,8 @@ void homography_compute2(float dst[3][3], float c[4][4]) {
     dst[0][0] = A[8 ], dst[0][1] = A[17], dst[0][2] = A[26];
     dst[1][0] = A[35], dst[1][1] = A[44], dst[1][2] = A[53];
     dst[2][0] = A[62], dst[2][1] = A[71], dst[2][2] = 1;
+
+    return true;
 }
 
 void homography_project2(const float H[3][3], float x, float y, float *ox, float *oy) {
@@ -12397,6 +12402,15 @@ void homography_project2(const float H[3][3], float x, float y, float *ox, float
     float zz = H[2][0] * x + H[2][1] * y + H[2][2];
     *ox = xx / zz;
     *oy = yy / zz;
+}
+
+static inline float Bicubic_W(float x) {
+    const float a = -0.5;
+    // x = fast_fabsf(x); // no need
+    float x2 = x * x, x3 = x2 * x;
+    if(x <= 1) return (a + 2) * x3 - (a + 3) * x2 + 1;
+    if(x < 2) return a * x3 - 5 * a * x2 + 8 * a * x - 4 * a;
+    return 0;
 }
 
 // http://jepsonsblog.blogspot.com/2012/11/rotation-in-3d-using-opencvs.html
@@ -12419,7 +12433,7 @@ void imlib_rotation_corr(image_t *img, float x_rotation, float y_rotation, float
             {0,      0,      corners[4], corners[5]},
             {0,      hh - 1, corners[6], corners[7]},
         };
-        homography_compute2(m, c);
+        if(!homography_compute2(m, c)) return;
     }
 
     uint16_t *data = (uint16_t *)img->data;
@@ -12430,8 +12444,35 @@ void imlib_rotation_corr(image_t *img, float x_rotation, float y_rotation, float
         for (int x = 0; x < ww; ++x) {
             float x0_, y0_;
             homography_project2(m, x, y, &x0_, &y0_);
-            int x0 = fast_roundf(x0_), y0 = fast_roundf(y0_);
-            if (0<= x0 && x0 < w && 0 <= y0 && y0 < h) row_ptr[x] = data[y0 * w + x0];
+            int x0 = fast_floorf(x0_), y0 = fast_floorf(y0_);
+            float dx = x0_ - x0, dy = y0_ - y0;
+            const float W_x[4] = {Bicubic_W(1 + dx), Bicubic_W(dx), Bicubic_W(1 - dx), Bicubic_W(2 - dx)};
+            const float W_y[4] = {Bicubic_W(1 + dy), Bicubic_W(dy), Bicubic_W(1 - dy), Bicubic_W(2 - dy)};
+
+            float r = 0, g = 0, b = 0;
+            for (int yi = 0; yi < 4; ++yi) {
+                int yy = y0 + yi - 1;
+                yy = yy < 0 ? 0 : (yy >= h ? h - 1 : yy);
+                uint16_t* src_row = IMAGE_COMPUTE_RGB565_PIXEL_ROW_PTR(img, yy);
+                for (int xi = 0; xi < 4; ++xi) {
+                    int xx = x0 + xi - 1;
+                    xx = xx < 0 ? 0 : (xx >= w ? w - 1 : xx);
+
+                    float W = W_x[xi] * W_y[yi];
+                    uint16_t pixel = IMAGE_GET_RGB565_PIXEL_FAST(src_row, xx);
+                    r += COLOR_RGB565_TO_R5(pixel) * W;
+                    g += COLOR_RGB565_TO_G6(pixel) * W;
+                    b += COLOR_RGB565_TO_B5(pixel) * W;
+                }
+            }
+            int R = fast_roundf(r), G = fast_roundf(g), B = fast_roundf(b);
+            if (R > COLOR_R5_MAX) R = COLOR_R5_MAX;
+            else if (R < COLOR_R5_MIN) R = COLOR_R5_MIN;
+            if (G > COLOR_G6_MAX) G = COLOR_G6_MAX;
+            else if (G < COLOR_G6_MIN) G = COLOR_G6_MIN;
+            if (B > COLOR_B5_MAX) B = COLOR_B5_MAX;
+            else if (B < COLOR_B5_MIN) B = COLOR_B5_MIN;
+            row_ptr[x] = COLOR_R5_G6_B5_TO_RGB565(R, G, B);
         }
     }
     for (int y = 0; y < hh; ++y) 
