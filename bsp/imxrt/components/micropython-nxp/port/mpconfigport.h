@@ -151,7 +151,7 @@
 #define MICROPY_LONGINT_IMPL        (MICROPY_LONGINT_IMPL_MPZ)
 
 #define MICROPY_READER_VFS          (0)
-#define MICROPY_PY_PIN              (0)
+#define MICROPY_PY_PIN              (1)
 #define MICROPY_PY_PYBPIN           (1)
 #define MICROPY_PY_OS_DUPTERM       (1)
 #define MICROPY_VFS                 (0)

@@ -52,13 +52,13 @@ void mp_pin_od_write(void *machine_pin, int stat) {
     }
 }
 
-void mp_hal_pin_open_set(void *machine_pin, int mode) {
-    rt_pin_mode(((machine_pin_obj_t *)machine_pin)->pin, mode);
-}
+// void mp_hal_pin_open_set(void *machine_pin, int mode) {
+//     rt_pin_mode(((machine_pin_obj_t *)machine_pin)->pin, mode);
+// }
 
-char* mp_hal_pin_get_name(void *machine_pin) {
-    return ((machine_pin_obj_t *)machine_pin)->name;
-}
+// char* mp_hal_pin_get_name(void *machine_pin) {
+//     return ((machine_pin_obj_t *)machine_pin)->name;
+// }
 
 STATIC mp_obj_t machine_pin_obj_init_helper(machine_pin_obj_t *self, size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args);
 
