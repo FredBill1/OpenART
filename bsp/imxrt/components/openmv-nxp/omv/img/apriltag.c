@@ -12121,7 +12121,7 @@ static inline float point_ptr_dist(const float a[2], const float b[2]) {
 }
 
 #ifdef IMLIB_ENABLE_FIND_RECTS
-void imlib_find_rects(list_t *out, image_t *ptr, rectangle_t *roi, uint32_t threshold)
+void imlib_find_rects(list_t *out, image_t *ptr, rectangle_t *roi, int32_t threshold, uint32_t quality)
 {
     // Frame Buffer Memory Usage...
     // -> GRAYSCALE Input Image = w*h*1
@@ -12178,7 +12178,7 @@ void imlib_find_rects(list_t *out, image_t *ptr, rectangle_t *roi, uint32_t thre
     for (int y = roi->y, yy = roi->y + roi->h; y < yy; y++) {
         uint16_t *row_ptr = IMAGE_COMPUTE_RGB565_PIXEL_ROW_PTR(ptr, y);
         for (int x = roi->x, xx = roi->x + roi->w; x < xx; x++) {
-            *(grayscale_image++) = COLOR_RGB565_TO_B(IMAGE_GET_RGB565_PIXEL_FAST(row_ptr, x)) > -10 ? COLOR_GRAYSCALE_MAX : COLOR_GRAYSCALE_MIN;
+            *(grayscale_image++) = COLOR_RGB565_TO_B(IMAGE_GET_RGB565_PIXEL_FAST(row_ptr, x)) > threshold ? COLOR_GRAYSCALE_MAX : COLOR_GRAYSCALE_MIN;
         }
     }
 #endif
@@ -12232,6 +12232,8 @@ void imlib_find_rects(list_t *out, image_t *ptr, rectangle_t *roi, uint32_t thre
         }
     }
 
+
+#if (0)
     ////////////////////////////////////////////////////////////////
     // Reconcile detections--- don't report the same tag more
     // than once. (Allow non-overlapping duplicate detections.)
@@ -12381,6 +12383,44 @@ void imlib_find_rects(list_t *out, image_t *ptr, rectangle_t *roi, uint32_t thre
     fb_free(); // point_buffer
     fb_free(); // mag_buffer
     fb_free(); // theta_buffer
+
+#else
+    float max_c = 0;
+    struct quad *det;
+    for (int i0 = 0; i0 < zarray_size(detections); ++i0) {
+        struct quad *cur;
+        zarray_get_volatile(detections, i0, &cur);
+        float c = 0;
+        for (int i = 0; i < 4; ++i) c += point_ptr_dist(cur->p[i], cur->p[(i + 1) & 3]);
+        if (c > max_c) max_c = c, det = cur;
+    }
+
+    list_init(out, sizeof(find_rects_list_lnk_data_t));
+
+    if (max_c >= quality) {
+        find_rects_list_lnk_data_t lnk_data;
+        rectangle_init(&(lnk_data.rect), fast_roundf(det->p[0][0]) + roi->x, fast_roundf(det->p[0][1]) + roi->y, 0, 0);
+        for (size_t k = 1, l = (sizeof(det->p) / sizeof(det->p[0])); k < l; k++) {
+            rectangle_t temp;
+            rectangle_init(&temp, fast_roundf(det->p[k][0]) + roi->x, fast_roundf(det->p[k][1]) + roi->y, 0, 0);
+            rectangle_united(&(lnk_data.rect), &temp);
+        }
+
+        // Add corners...
+        lnk_data.corners[0].x = fast_roundf(det->p[3][0]) + roi->x; // top-left
+        lnk_data.corners[0].y = fast_roundf(det->p[3][1]) + roi->y; // top-left
+        lnk_data.corners[1].x = fast_roundf(det->p[2][0]) + roi->x; // top-right
+        lnk_data.corners[1].y = fast_roundf(det->p[2][1]) + roi->y; // top-right
+        lnk_data.corners[2].x = fast_roundf(det->p[1][0]) + roi->x; // bottom-right
+        lnk_data.corners[2].y = fast_roundf(det->p[1][1]) + roi->y; // bottom-right
+        lnk_data.corners[3].x = fast_roundf(det->p[0][0]) + roi->x; // bottom-left
+        lnk_data.corners[3].y = fast_roundf(det->p[0][1]) + roi->y; // bottom-left
+
+        lnk_data.magnitude = (uint32_t)max_c;
+
+        list_push_back(out, &lnk_data);
+    }
+#endif
 
     zarray_destroy(detections);
     fb_free(); // grayscale_image;
