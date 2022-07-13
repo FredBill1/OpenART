@@ -12140,6 +12140,7 @@ void imlib_find_rects(list_t *out, image_t *ptr, rectangle_t *roi, uint32_t thre
     im.stride = roi->w;
     im.buf = grayscale_image;
 
+#if (0)
     switch(ptr->bpp) {
         case IMAGE_BPP_BINARY: {
             for (int y = roi->y, yy = roi->y + roi->h; y < yy; y++) {
@@ -12173,7 +12174,14 @@ void imlib_find_rects(list_t *out, image_t *ptr, rectangle_t *roi, uint32_t thre
             break;
         }
     }
-
+#else
+    for (int y = roi->y, yy = roi->y + roi->h; y < yy; y++) {
+        uint16_t *row_ptr = IMAGE_COMPUTE_RGB565_PIXEL_ROW_PTR(ptr, y);
+        for (int x = roi->x, xx = roi->x + roi->w; x < xx; x++) {
+            *(grayscale_image++) = COLOR_RGB565_TO_B(IMAGE_GET_RGB565_PIXEL_FAST(row_ptr, x)) > -10 ? COLOR_GRAYSCALE_MAX : COLOR_GRAYSCALE_MIN;
+        }
+    }
+#endif
     ///////////////////////////////////////////////////////////
     // Detect quads according to requested image decimation
     // and blurring parameters.
