@@ -12111,6 +12111,15 @@ void imlib_find_apriltags(list_t *out, image_t *ptr, rectangle_t *roi, apriltag_
     fb_free(); // umm_init_x();
 }
 
+static inline float point_ptr_dist2(const float a[2], const float b[2]) {
+    float dx = a[0] - b[0], dy = a[1] - b[1];
+    return dx * dx + dy * dy;
+}
+
+static inline float point_ptr_dist(const float a[2], const float b[2]) {
+    return fast_sqrtf(point_ptr_dist2(a, b));
+}
+
 #ifdef IMLIB_ENABLE_FIND_RECTS
 void imlib_find_rects(list_t *out, image_t *ptr, rectangle_t *roi, uint32_t threshold)
 {
@@ -12194,46 +12203,81 @@ void imlib_find_rects(list_t *out, image_t *ptr, rectangle_t *roi, uint32_t thre
         }
     }
 
+    //! FredBill: only keep the rects with shape close to perfect square
+    if (1) {
+        for (int i0 = 0; i0 < zarray_size(detections);) {
+            struct quad *det;
+            zarray_get_volatile(detections, i0, &det);
+            float max_len2 = 0, min_len2 = HUGE_VALF;
+            for (int i = 0; i < 4; ++i) {
+                float len2 = point_ptr_dist2(det->p[i], det->p[(i + 1) & 3]);
+                if (len2 > max_len2) max_len2 = len2;
+                if (len2 < min_len2) min_len2 = len2;
+            }
+            float max_len = fast_sqrtf(max_len2);
+            float min_len = fast_sqrtf(min_len2);
+            if ((max_len - min_len) > 0.2f * min_len) {
+                zarray_remove_index(detections, i0, 1);
+            } else {
+                ++i0;
+            }
+        }
+    }
+
     ////////////////////////////////////////////////////////////////
     // Reconcile detections--- don't report the same tag more
     // than once. (Allow non-overlapping duplicate detections.)
     if (1) {
+#if (0)
         zarray_t *poly0 = g2d_polygon_create_zeros(4);
         zarray_t *poly1 = g2d_polygon_create_zeros(4);
+#endif
 
         for (int i0 = 0; i0 < zarray_size(detections); i0++) {
 
             struct quad *det0;
             zarray_get_volatile(detections, i0, &det0);
-
+#if (0)
             for (int k = 0; k < 4; k++)
                 zarray_set(poly0, k, det0->p[k], NULL);
-
+#endif
             for (int i1 = i0+1; i1 < zarray_size(detections); i1++) {
 
                 struct quad *det1;
                 zarray_get_volatile(detections, i1, &det1);
 
+#if (0)
                 for (int k = 0; k < 4; k++)
                     zarray_set(poly1, k, det1->p[k], NULL);
-
                 if (g2d_polygon_overlaps_polygon(poly0, poly1)) {
                     // the tags overlap. Delete one, keep the other.
-
+#else
+                //! FredBill: only keep at most one result
+                {
+#endif
+#if (0)
                     int pref = 0; // 0 means undecided which one we'll keep.
-
                     // if we STILL don't prefer one detection over the other, then pick
                     // any deterministic criterion.
                     for (int i = 0; i < 4; i++) {
+                        for (int j = 0; j < 4; ++j) {}
                         pref = prefer_smaller(pref, det0->p[i][0], det1->p[i][0]);
                         pref = prefer_smaller(pref, det0->p[i][1], det1->p[i][1]);
                     }
-
                     if (pref == 0) {
                         // at this point, we should only be undecided if the tag detections
                         // are *exactly* the same. How would that happen?
                         printf("uh oh, no preference for overlappingdetection\n");
                     }
+#else
+                    //! FredBill: pick the one with bigger circumference
+                    float c0 = 0, c1 = 0;
+                    for (int i = 0; i < 4; i++) {
+                        c0 += point_ptr_dist(det0->p[i], det0->p[(i + 1) & 3]);
+                        c1 += point_ptr_dist(det1->p[i], det1->p[(i + 1) & 3]);
+                    }
+                    int pref = c0 < c1 ? 1 : -1;
+#endif
 
                     if (pref < 0) {
                         // keep det0, destroy det1
@@ -12257,9 +12301,10 @@ void imlib_find_rects(list_t *out, image_t *ptr, rectangle_t *roi, uint32_t thre
 
           retry0: ;
         }
-
+#if (0)
         zarray_destroy(poly0);
         zarray_destroy(poly1);
+#endif
     }
 
     list_init(out, sizeof(find_rects_list_lnk_data_t));
