@@ -117,7 +117,7 @@
 #define IMLIB_ENABLE_APRILTAGS
 
 // Enable fine find_apriltags() - (8-way connectivity versus 4-way connectivity)
-// #define IMLIB_ENABLE_FINE_APRILTAGS
+#define IMLIB_ENABLE_FINE_APRILTAGS
 
 // Enable high res find_apriltags() - uses more RAM
 #define IMLIB_ENABLE_HIGH_RES_APRILTAGS
