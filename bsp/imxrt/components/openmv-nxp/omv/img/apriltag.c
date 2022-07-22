@@ -11106,7 +11106,7 @@ apriltag_detector_t *apriltag_detector_create()
     td->qtp.max_nmaxima = 30;
     td->qtp.min_cluster_pixels = 5;
 
-    td->qtp.max_line_fit_mse = 20.0;
+    td->qtp.max_line_fit_mse = 50.0;
     td->qtp.critical_rad = 10 * M_PI / 180;
     td->qtp.deglitch = 0;
     td->qtp.min_white_black_diff = 5;
